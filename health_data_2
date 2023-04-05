@@ -1,0 +1,40 @@
+-- Connect to database
+USE health_database;
+
+-- Load data
+CREATE TABLE health_data (
+  patient_id INT,
+  date DATE,
+  age INT,
+  weight FLOAT,
+  height FLOAT
+);
+
+LOAD DATA INFILE '/path/to/health_data.csv'
+INTO TABLE health_data
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+-- Data preprocessing
+ALTER TABLE health_data
+ADD bmi FLOAT,
+ADD risk ENUM('High', 'Low');
+
+UPDATE health_data
+SET date = STR_TO_DATE(date, '%m/%d/%Y'),
+    age = CAST(age AS INT);
+
+DELETE FROM health_data
+WHERE weight IS NULL OR height IS NULL;
+
+-- Feature engineering
+UPDATE health_data
+SET bmi = weight / (height / 100) * (height / 100),
+    risk = CASE WHEN bmi >= 25 THEN 'High' ELSE 'Low' END;
+
+-- Data analysis
+SELECT AVG(bmi) AS avg_bmi,
+       STDDEV(bmi) AS std_bmi,
+       MAX(bmi) AS max_bmi
+FROM health_data;
